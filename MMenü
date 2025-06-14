@@ -1,0 +1,122 @@
+#!/bin/bash
+
+clear
+figlet "GTX TOOLS" | lolcat
+echo -e "\033[36mGtxAnqel tarafından geliştirilmiştir. Eğitim amaçlıdır.\033[0m"
+echo "────────────────────────────────────────────────────"
+echo ""
+
+while true; do
+  echo -e "\n\033[33mMENÜ:\033[0m"
+  echo "1. IP Konum Bulucu"
+  echo "2. Kullanıcı Adı Taraması (GTX Userscan)"
+  echo "3. Link Güvenlik Kontrolü"
+  echo "4. Sistem Bilgisi"
+  echo "5. Çıkış"
+  read -p $'\nBir seçenek girin [1-5]: ' secim
+
+  case "$secim" in
+    1)
+      clear
+      figlet "GTX IP-TRACER" | lolcat
+      read -p $'\033[33m🔍 IP adresi ya da komut (GTX-M / GTX-MN): \033[0m' girdi
+
+      function bilgi_goster {
+        ip="$1"
+        echo -e "\033[93m[!] Bilgiler alınıyor...\033[0m"
+        data=$(curl -s "http://ip-api.com/json/$ip?fields=status,country,regionName,city,district,zip,lat,lon,message")
+        status=$(echo "$data" | grep -oP '(?<="status":")[^"]+')
+        [[ "$status" != "success" ]] && echo -e "\033[31m[!] Hata: $(echo "$data" | grep -oP '(?<="message":")[^"]+')\033[0m" && continue
+        echo -e "\033[92mIP BİLGİSİ:\033[0m"
+        echo -e "  IP        : $ip"
+        echo -e "  Ülke      : $(echo "$data" | grep -oP '(?<="country":")[^"]+')"
+        echo -e "  Bölge     : $(echo "$data" | grep -oP '(?<="regionName":")[^"]+')"
+        echo -e "  Şehir     : $(echo "$data" | grep -oP '(?<="city":")[^"]+')"
+        echo -e "  İlçe      : $(echo "$data" | grep -oP '(?<="district":")[^"]*' || echo 'Bilinmiyor')"
+        echo -e "  Posta     : $(echo "$data" | grep -oP '(?<="zip":")[^"]*' || echo 'Bilinmiyor')"
+        echo -e "  Koordinat : $(echo "$data" | grep -oP '(?<="lat":)[^,]+'), $(echo "$data" | grep -oP '(?<="lon":)[^,}]+')"
+      }
+
+      if [[ "$girdi" == "GTX-M" ]]; then
+        bilgi_goster "$(curl -s ifconfig.me)"
+      elif [[ "$girdi" == "GTX-MN" ]]; then
+        exec "$0"
+      elif [[ "$girdi" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        bilgi_goster "$girdi"
+      else
+        echo -e "\033[31m[!] Geçersiz giriş.\033[0m"
+      fi
+      read -p $'\n↩️ Enter ile menüye dön...' ;;
+    2)
+      clear
+      figlet "GTX USERSCAN" | lolcat
+      echo -e "\033[36mKullanıcı adı sosyal medya tarayıcısı başlatıldı.\033[0m"
+      platformlar=(
+        "Instagram:https://www.instagram.com/"
+        "Twitter:https://www.twitter.com/"
+        "GitHub:https://www.github.com/"
+        "Facebook:https://www.facebook.com/"
+        "TikTok:https://www.tiktok.com/@"
+        "Reddit:https://www.reddit.com/user/"
+        "YouTube:https://www.youtube.com/@"
+        "Kick:https://kick.com/"
+      )
+
+      while true; do
+        read -p "🔍 Kullanıcı adı ya da 'k' komutu: " kullanici
+        [[ "$kullanici" == "k" ]] && break
+
+        echo -e "\n\033[33mSosyal medya taraması başlatılıyor...\033[0m"
+        for site in "${platformlar[@]}"; do
+          isim=$(echo "$site" | cut -d":" -f1)
+          url=$(echo "$site" | cut -d":" -f2-)
+          tam_url="${url}${kullanici}"
+          http_status=$(curl -s -L -o /dev/null -w "%{http_code}" "$tam_url")
+
+          if [[ "$http_status" =~ ^2[0-9]{2}$ || "$http_status" =~ ^3[0-9]{2}$ ]]; then
+            echo -e "\033[32m[✓] $isim bulundu: $tam_url\033[0m"
+          else
+            echo -e "\033[31m[✗] $isim bulunamadı.\033[0m"
+          fi
+          sleep 0.2
+        done
+        echo ""
+      done
+      read -p $'\n↩️ Enter ile menüye dön...' ;;
+    3)
+      clear
+      figlet "GTX LINKSCAN" | lolcat
+      read -p "🔗 URL'yi girin: " url
+      if echo "$url" | grep -q "^https://"; then
+        echo -e "\033[32m[+] HTTPS kullanılıyor (güvenli bağlantı)\033[0m"
+      else
+        echo -e "\033[33m[-] HTTPS yok, dikkatli olun\033[0m"
+      fi
+      domain=$(echo $url | awk -F/ '{print $3}')
+      whois_info=$(whois $domain | grep -Ei 'Registrar|Creation Date' | head -n 4)
+      echo -e "\n\033[36mDomain Bilgisi:\033[0m\n$whois_info"
+      httpcode=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+      if [[ "$httpcode" == "200" ]]; then
+        echo -e "\033[32m[✓] Link çalışıyor.\033[0m"
+      else
+        echo -e "\033[31m[✗] Link sorunlu ($httpcode).\033[0m"
+      fi
+      read -p $'\n↩️ Enter ile menüye dön...' ;;
+    4)
+      clear
+      figlet "GTX SYSTEM" | lolcat
+      echo -e "\033[33mCihaz bilgileri:\033[0m"
+      echo "Kullanıcı  : $(whoami)"
+      echo "Hostname   : $(uname -n)"
+      echo "Sistem     : $(uname -o)"
+      echo "Çekirdek   : $(uname -r)"
+      echo "Mimari     : $(uname -m)"
+      echo "IP Adresi  : $(curl -s ifconfig.me)"
+      read -p $'\n↩️ Enter ile menüye dön...' ;;
+    5)
+      echo -e "\n\033[31mÇıkış yapılıyor. Görüşmek üzere!\033[0m"
+      exit ;;
+    *)
+      echo -e "\033[31mGeçersiz seçenek!\033[0m" ;;
+  esac
+done
